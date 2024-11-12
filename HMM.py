@@ -35,26 +35,43 @@ class HMM:
 
     ## part 1 - you do this.
     def load(self, basename):
-        """reads HMM structure from transition (basename.trans),
-        and emission (basename.emit) files,
-        as well as the probabilities."""
-        pass
+        """Reads HMM structure from transition and emission files, as well as the probabilities."""
+        with open(f"{basename}.trans", "r") as trans_file:
+            for line in trans_file:
+                parts = line.strip().split()
+                from_state = parts[0]
+                if not from_state in self.transitions:
+                    self.transitions[from_state] = {}
+                i = 1
+                while i < len(parts):
+                    to_state = parts[i]
+                    probability = float(parts[i + 1])
+                    self.transitions[from_state][to_state] = probability
+                    i += 2
 
+        with open(f"{basename}.emit", "r") as emit_file:
+            for line in emit_file:
+                parts = line.strip().split()
+                state = parts[0]
+                if not state in self.emissions:
+                    self.emissions[state] = {}
+                i = 1
+                while i < len(parts):
+                    observation = parts[i]
+                    probability = float(parts[i + 1])
+                    self.emissions[state][observation] = probability
+                    i += 2
 
-   ## you do this.
+    ## you do this.
     def generate(self, n):
         """return an n-length Sequence by randomly sampling from this HMM."""
         pass
 
     def forward(self, sequence):
         pass
+
     ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
     ## determine the most likely sequence of states.
-
-
-
-
-
 
     def viterbi(self, sequence):
         pass
