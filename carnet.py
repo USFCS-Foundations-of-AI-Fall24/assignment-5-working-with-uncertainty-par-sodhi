@@ -91,7 +91,7 @@ def main():
     print(car_infer.query(variables=["Starts"], evidence={"Radio": "turns on", "Gas": "Full"}))
 
     #Probability that the key is not present given that the car does not move
-    print("Query 6:", car_infer.query(variables=["KeyPresent"], evidence={"Moves": "no"}))
+    print(car_infer.query(variables=["KeyPresent"], evidence={"Moves": "no"}))
 
 
 if __name__ == "__main__":
