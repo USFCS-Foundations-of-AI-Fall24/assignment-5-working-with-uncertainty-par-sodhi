@@ -1,10 +1,9 @@
-
-
 import random
 import argparse
 import codecs
 import os
 import numpy
+
 
 # Sequence - represents a sequence of hidden states and corresponding
 # output variables.
@@ -63,9 +62,35 @@ class HMM:
                     i += 2
 
     ## you do this.
+    # Source I used: https://www.geeksforgeeks.org/hidden-markov-model-in-machine-learning/
     def generate(self, n):
-        """return an n-length Sequence by randomly sampling from this HMM."""
-        pass
+        """Return an n-length Sequence by randomly sampling from this HMM."""
+        state_path = []
+        emission_symbols = []
+        state = random.choices(
+            population=list(self.transitions["#"].keys()),
+            weights=list(self.transitions["#"].values()),
+            k=1
+        )[0]
+        state_path.append(state)
+
+        while len(state_path) < n:
+            state = random.choices(
+                population=list(self.transitions[state].keys()),
+                weights=list(self.transitions[state].values()),
+                k=1
+            )[0]
+            state_path.append(state)
+
+            if state in self.emissions:
+                output = random.choices(
+                    population=list(self.emissions[state].keys()),
+                    weights=list(self.emissions[state].values()),
+                    k=1
+                )[0]
+                emission_symbols.append(output)
+
+        return Sequence(state_path, emission_symbols)
 
     def forward(self, sequence):
         pass
@@ -78,7 +103,22 @@ class HMM:
     ## You do this. Given a sequence with a list of emissions, fill in the most likely
     ## hidden states using the Viterbi algorithm.
 
+def main():
+    parser = argparse.ArgumentParser(description="HMM Monte Carlo sequence generator and tester")
+    parser.add_argument("basename", help="Base name for HMM model files (e.g., cat, lander, partofspeech)")
+    parser.add_argument("--generate", type=int, help="Number of steps to generate in the sequence")
+    args = parser.parse_args()
 
+    hmm = HMM()
+    hmm.load(args.basename)
+
+    if args.generate:
+        print("Generated sequence:")
+        print(hmm.generate(args.generate))
+
+
+if __name__ == "__main__":
+    main()
 
 
 
