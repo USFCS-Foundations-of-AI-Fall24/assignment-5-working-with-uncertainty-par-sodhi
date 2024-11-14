@@ -3,6 +3,7 @@ import argparse
 import codecs
 import os
 import numpy
+import numpy as np
 
 
 # Sequence - represents a sequence of hidden states and corresponding
@@ -32,7 +33,7 @@ class HMM:
         self.transitions = transitions
         self.emissions = emissions
 
-    ## part 1 - you do this.
+        ## part 1 - you do this.
     def load(self, basename):
         """Reads HMM structure from transition and emission files, as well as the probabilities."""
         with open(f"{basename}.trans", "r") as trans_file:
@@ -74,14 +75,13 @@ class HMM:
         )[0]
         state_path.append(state)
 
-        while len(state_path) < n:
+        while len(emission_symbols) < n:
             state = random.choices(
                 population=list(self.transitions[state].keys()),
                 weights=list(self.transitions[state].values()),
                 k=1
             )[0]
             state_path.append(state)
-
             if state in self.emissions:
                 output = random.choices(
                     population=list(self.emissions[state].keys()),
@@ -90,35 +90,84 @@ class HMM:
                 )[0]
                 emission_symbols.append(output)
 
-        return Sequence(state_path, emission_symbols)
+        return Sequence(state_path[:n], emission_symbols)
 
+    # Used forward psuedo code to implement this
+    #Set up the initial matrix M, with P=1.0 for the ‘#’ state.
+    # For each state on day 1: P(state | e0) = ￼P(e0 | state) P(state | #)
+    # for i = 2 to n  :
+    # foreach state s:
+        # sum = 0
+        # for s2 in states :
+        # sum += M[s2, i-1]*T[s2,s]*E[O[i],s]
+    # M[s2,i] = sum
     def forward(self, sequence):
-        pass
+        states = list(self.transitions.keys())
+        states.remove("#")
+        num_states = len(states)
+
+        # Set up the initial matrix M, with P=1.0 for the ‘#’ state.
+        M = np.zeros((num_states, len(sequence)))
+
+        # For each state on day 1: P(state | e0) = ￼P(e0 | state) P(state | #)
+        for s in range(len(states)):
+            M[s, 0] = self.emissions[states[s]].get(sequence[0], 0) * self.transitions["#"].get(states[s], 1.0)
+
+        for i in range(1, len(sequence)):
+            for s in range(len(states)):
+                sum_prob = 0
+                for s2 in range(len(states)):
+                    prev_state = states[s2]
+                    sum_prob += M[s2, i - 1] * self.transitions[prev_state].get(states[s], 0) * self.emissions[states[s]].get(
+                        sequence[i], 0)
+                M[s, i] = sum_prob
+
+        return states[np.argmax(M[:, -1])]
 
     ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
     ## determine the most likely sequence of states.
 
     def viterbi(self, sequence):
         pass
+
     ## You do this. Given a sequence with a list of emissions, fill in the most likely
     ## hidden states using the Viterbi algorithm.
 
 def main():
-    parser = argparse.ArgumentParser(description="HMM Monte Carlo sequence generator and tester")
-    parser.add_argument("basename", help="Base name for HMM model files (e.g., cat, lander, partofspeech)")
-    parser.add_argument("--generate", type=int, help="Number of steps to generate in the sequence")
+    parser = argparse.ArgumentParser(description="HMM")
+    parser.add_argument("basename", type=str, help="Basename")
+    parser.add_argument("--generate", type=int, help="Generate")
+    parser.add_argument("--forward", type=str, help="Forward")
+    parser.add_argument("--output", type=str, help="Output")
+
     args = parser.parse_args()
 
     hmm = HMM()
     hmm.load(args.basename)
 
     if args.generate:
+        generated = hmm.generate(args.generate)
         print("Generated sequence:")
-        print(hmm.generate(args.generate))
+        print("State Sequence:", " ".join(generated.stateseq))
+        print("Output Sequence:", " ".join(generated.outputseq))
 
+        if args.output:
+            with open(args.output, 'w') as file:
+                file.write(" ".join(generated.outputseq))
+            print(f"Generated sequence saved to {args.output}")
+
+    if args.forward:
+        with open(args.forward, 'r') as file:
+            sequence = file.read().strip().split()
+
+        result = hmm.forward(sequence)
+        print("Predicted final state using forward algorithm:", result)
 
 if __name__ == "__main__":
     main()
+
+
+
 
 
 
