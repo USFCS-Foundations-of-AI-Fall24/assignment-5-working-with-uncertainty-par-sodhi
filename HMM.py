@@ -104,24 +104,28 @@ class HMM:
     def forward(self, sequence):
         states = list(self.transitions.keys())
         states.remove("#")
+        safe_landings = {"2,5", "3,4", "4,3", "4,4","5,5"}
 
         # Set up the initial matrix M, with P=1.0 for the ‘#’ state.
         M = np.zeros((len(states), len(sequence)))
 
-        # For each state on day 1: P(state | e0) = ￼P(e0 | state) P(state | #)
-        for state in range(len(states)):
-            M[state, 0] = self.emissions[states[state]].get(sequence[0], 0) * self.transitions["#"].get(states[state], 1.0)
+        # For each state on day 1: P(state | e0) = P(e0 | state) P(state | #)
+        state = 0
+        while state < len(states):
+            M[state, 0] = self.emissions[states[state]].get(sequence[0], 0) * self.transitions["#"].get(states[state],0)
+            state += 1
 
         for i in range(1, len(sequence)):
             for state in range(len(states)):
                 sum = 0
                 for s2 in range(len(states)):
                     prev_state = states[s2]
-                    sum += M[s2, i - 1] * self.transitions[prev_state].get(states[state], 0) * self.emissions[states[state]].get(
+                    sum += M[s2, i - 1] * self.transitions[prev_state].get(states[state], 0) * self.emissions[
+                        states[state]].get(
                         sequence[i], 0)
                 M[state, i] = sum
 
-        return states[np.argmax(M[:, -1])]
+        return states[np.argmax(M[:, -1])], states[np.argmax(M[:, -1])] in safe_landings
 
     ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
     ## determine the most likely sequence of states.
@@ -159,8 +163,16 @@ def main():
         with open(args.forward, 'r') as file:
             sequence = file.read().strip().split()
 
-        result = hmm.forward(sequence)
-        print("Predicted final state using forward algorithm:", result)
+        final_state, is_safe = hmm.forward(sequence) if args.basename == "lander" else (hmm.forward(sequence), None)
+
+        if args.basename == "lander":
+            print(f"Final State: {final_state}")
+            if is_safe:
+                print("Landing is SAFE at the final state.")
+            else:
+                print("Landing is NOT SAFE at the final state.")
+        else:
+            print(f"Predicted final state using forward algorithm:: {final_state}")
 
 if __name__ == "__main__":
     main()
