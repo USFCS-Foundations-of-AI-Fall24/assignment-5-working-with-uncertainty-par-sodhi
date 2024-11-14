@@ -104,23 +104,22 @@ class HMM:
     def forward(self, sequence):
         states = list(self.transitions.keys())
         states.remove("#")
-        num_states = len(states)
 
         # Set up the initial matrix M, with P=1.0 for the ‘#’ state.
-        M = np.zeros((num_states, len(sequence)))
+        M = np.zeros((len(states), len(sequence)))
 
         # For each state on day 1: P(state | e0) = ￼P(e0 | state) P(state | #)
-        for s in range(len(states)):
-            M[s, 0] = self.emissions[states[s]].get(sequence[0], 0) * self.transitions["#"].get(states[s], 1.0)
+        for state in range(len(states)):
+            M[state, 0] = self.emissions[states[state]].get(sequence[0], 0) * self.transitions["#"].get(states[state], 1.0)
 
         for i in range(1, len(sequence)):
-            for s in range(len(states)):
-                sum_prob = 0
+            for state in range(len(states)):
+                sum = 0
                 for s2 in range(len(states)):
                     prev_state = states[s2]
-                    sum_prob += M[s2, i - 1] * self.transitions[prev_state].get(states[s], 0) * self.emissions[states[s]].get(
+                    sum += M[s2, i - 1] * self.transitions[prev_state].get(states[state], 0) * self.emissions[states[state]].get(
                         sequence[i], 0)
-                M[s, i] = sum_prob
+                M[state, i] = sum
 
         return states[np.argmax(M[:, -1])]
 
@@ -148,13 +147,13 @@ def main():
     if args.generate:
         generated = hmm.generate(args.generate)
         print("Generated sequence:")
-        print("State Sequence:", " ".join(generated.stateseq))
-        print("Output Sequence:", " ".join(generated.outputseq))
+        print("State sequence:", " ".join(generated.stateseq))
+        print("Output sequence:", " ".join(generated.outputseq))
 
         if args.output:
             with open(args.output, 'w') as file:
                 file.write(" ".join(generated.outputseq))
-            print(f"Generated sequence saved to {args.output}")
+            print(f"Generated sequence saved at: {args.output}")
 
     if args.forward:
         with open(args.forward, 'r') as file:
