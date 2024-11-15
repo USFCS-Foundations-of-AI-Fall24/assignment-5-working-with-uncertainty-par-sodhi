@@ -33,6 +33,7 @@ class HMM:
         self.transitions = transitions
         self.emissions = emissions
 
+
         ## part 1 - you do this.
     def load(self, basename):
         """Reads HMM structure from transition and emission files, as well as the probabilities."""
@@ -110,29 +111,59 @@ class HMM:
         M = np.zeros((len(states), len(sequence)))
 
         # For each state on day 1: P(state | e0) = P(e0 | state) P(state | #)
-        state = 0
-        while state < len(states):
-            M[state, 0] = self.emissions[states[state]].get(sequence[0], 0) * self.transitions["#"].get(states[state],0)
-            state += 1
+        self.initialize_first_observation(sequence, states, M)
 
         for i in range(1, len(sequence)):
             for state in range(len(states)):
                 sum = 0
-                for s2 in range(len(states)):
-                    prev_state = states[s2]
-                    sum += M[s2, i - 1] * self.transitions[prev_state].get(states[state], 0) * self.emissions[
-                        states[state]].get(
-                        sequence[i], 0)
+                for second_state in range(len(states)):
+                    prev_state = states[second_state]
+                    sum += M[second_state, i - 1] * self.transitions[prev_state].get(states[state], 0) * self.emissions[
+                        states[state]].get(sequence[i], 0)
                 M[state, i] = sum
-
         return states[np.argmax(M[:, -1])], states[np.argmax(M[:, -1])] in safe_landings
 
     ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
     ## determine the most likely sequence of states.
-
     def viterbi(self, sequence):
-        pass
+        states = list(self.transitions.keys())
+        states.remove("#")
+        M = np.zeros((len(states), len(sequence)))
+        path = np.zeros((len(states), len(sequence)), dtype=int)
+        self.initialize_first_observation(sequence, states, M, path)
 
+        for i in range(1, len(sequence)):
+            for state in range(len(states)):
+                max_prob = 0
+                best_prev_state = 0
+                for second_state in range(len(states)):
+                    prev_state = states[second_state]
+                    sum = M[second_state, i - 1] * self.transitions[prev_state].get(states[state], 0) * self.emissions[
+                        states[state]].get(sequence[i], 0)
+                    if sum > max_prob:
+                        max_prob = sum
+                        best_prev_state = second_state
+                M[state, i] = max_prob
+                path[state, i] = best_prev_state
+
+        return self.backtrack_viterbi_path(path, states, np.argmax(M[:, -1]), len(sequence))
+
+    def backtrack_viterbi_path(self, path, states, last_state, sequence_length):
+        best_path = [last_state]
+        for i in range(sequence_length - 1, 0, -1):
+            last_state = path[last_state, i]
+            best_path.insert(0, last_state)
+
+        return [states[state_index] for state_index in best_path]
+
+    def initialize_first_observation(self, sequence, states, V, path=None):
+        state = 0
+        while state < len(states):
+            V[state, 0] = self.emissions[states[state]].get(sequence[0], 0) * self.transitions["#"].get(states[state],
+                                                                                                        1.0)
+            if path is not None:
+                path[state, 0] = 0
+            state += 1
     ## You do this. Given a sequence with a list of emissions, fill in the most likely
     ## hidden states using the Viterbi algorithm.
 
@@ -141,6 +172,7 @@ def main():
     parser.add_argument("basename", type=str, help="Basename")
     parser.add_argument("--generate", type=int, help="Generate")
     parser.add_argument("--forward", type=str, help="Forward")
+    parser.add_argument("--viterbi", type=str, help="Viterbi")
     parser.add_argument("--output", type=str, help="Output")
 
     args = parser.parse_args()
@@ -173,6 +205,12 @@ def main():
                 print("Landing is NOT SAFE at the final state.")
         else:
             print(f"Predicted final state using forward algorithm:: {final_state}")
+
+    if args.viterbi:
+        with open(args.viterbi, 'r') as file:
+            sequence = file.read().strip().split()
+            final_path = hmm.viterbi(sequence)
+            print(f"Final Path: {final_path}")
 
 if __name__ == "__main__":
     main()
