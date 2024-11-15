@@ -156,11 +156,10 @@ class HMM:
 
         return [states[state_index] for state_index in best_path]
 
-    def initialize_first_observation(self, sequence, states, V, path=None):
+    def initialize_first_observation(self, sequence, states, M, path=None):
         state = 0
         while state < len(states):
-            V[state, 0] = self.emissions[states[state]].get(sequence[0], 0) * self.transitions["#"].get(states[state],
-                                                                                                        1.0)
+            M[state, 0] = self.emissions[states[state]].get(sequence[0], 0) * self.transitions["#"].get(states[state],1.0)
             if path is not None:
                 path[state, 0] = 0
             state += 1
