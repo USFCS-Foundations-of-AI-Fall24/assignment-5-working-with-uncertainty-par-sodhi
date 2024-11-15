@@ -73,24 +73,31 @@ def main():
 
     car_infer = VariableElimination(car_model)
 
+    print("Query: What is the probability that the car moves given the radio turns on and the car starts?")
     print(car_infer.query(variables=["Moves"], evidence={"Radio": "turns on", "Starts": "yes"}))
 
     #Given that the car will not move, what is the probability that the battery is not working?
+    print("Query: Given that the car will not move, what is the probability that the battery is not working?")
     print(car_infer.query(variables=["Battery"], evidence={"Moves": "no"}))
 
     #Given that the radio is not working, what is the probability that the car will not start?
+    print("Query: Given that the radio is not working, what is the probability that the car will not start?")
     print(car_infer.query(variables=["Starts"], evidence={"Radio": "Doesn't turn on"}))
 
     #Given that the battery is working, does the probability of the radio working change if we discover that the car has gas in it?
+    print("Query: Given that the battery is working, does the probability of the radio working change if we discover that the car has gas in it?")
     print(car_infer.query(variables=["Radio"], evidence={"Battery": "Works", "Gas": "Full"}))
 
     #Given that the car doesn't move, how does the probability of the ignition failing change if we observe that the car does not have gas in it?
+    print("Query: Given that the car doesn't move, how does the probability of the ignition failing change if we observe that the car does not have gas in it?")
     print(car_infer.query(variables=["Ignition"], evidence={"Moves": "no", "Gas": "Empty"}))
 
     #What is the probability that the car starts if the radio works and it has gas in it?
+    print("Query: What is the probability that the car starts if the radio works and it has gas in it?")
     print(car_infer.query(variables=["Starts"], evidence={"Radio": "turns on", "Gas": "Full"}))
 
     #Probability that the key is not present given that the car does not move
+    print("Query: What is the probability that the key is not present given that the car does not move?")
     print(car_infer.query(variables=["KeyPresent"], evidence={"Moves": "no"}))
 
 
